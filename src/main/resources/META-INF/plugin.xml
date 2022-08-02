@@ -1,0 +1,46 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>com.byte_stefan.collect_util</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>CollectUtilTool</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor email="shirt1010@163.com">ByteStefan</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+    <b> English Version Description</b><br/>
+    v1.0.0 version instruction
+    <ul>
+        <li>support collect and search common util classes</li>
+    </ul>
+
+    <b> 中文版本说明 </b><br/>
+    v1.0.0 版本更新说明
+    <ul>
+        <li>支持收集和搜索常用的 util 类</li>
+    </ul>
+    ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.android</depends>
+    <depends>org.jetbrains.kotlin</depends>
+
+    <applicationListeners>
+        <listener class="com.byte_stefan.collect_util.lifecycle.UtilClassFileProjectListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
+        <listener class="com.byte_stefan.collect_util.lifecycle.UtilClassFileIndexedFilesListener" topic="com.intellij.util.indexing.UnindexedFilesUpdaterListener"/>
+    </applicationListeners>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="BALLOON Notification Group" displayType="BALLOON" key="DevToolNotification"/>
+    </extensions>
+</idea-plugin>
