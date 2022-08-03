@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.byte_stefan"
-version = "1.0-SNAPSHOT"
+version = "1.0-alpha.1"
 
 repositories {
     mavenCentral()
@@ -34,16 +34,6 @@ tasks {
     patchPluginXml {
         sinceBuild.set("203.7717")
         untilBuild.set("222.*")
-    }
-
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
-
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
     }
 
     runIde {

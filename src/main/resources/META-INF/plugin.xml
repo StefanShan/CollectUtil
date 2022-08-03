@@ -35,12 +35,12 @@
 
     <applicationListeners>
         <listener class="com.byte_stefan.collect_util.lifecycle.UtilClassFileProjectListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
-        <listener class="com.byte_stefan.collect_util.lifecycle.UtilClassFileIndexedFilesListener" topic="com.intellij.util.indexing.UnindexedFilesUpdaterListener"/>
     </applicationListeners>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="CollectUtilTool" anchor="bottom" secondary="true" icon="AllIcons.General.ExternalTools" factoryClass="com.byte_stefan.collect_util.ui.CollectUtilToolWindow"/>
         <notificationGroup id="BALLOON Notification Group" displayType="BALLOON" key="DevToolNotification"/>
     </extensions>
 </idea-plugin>
