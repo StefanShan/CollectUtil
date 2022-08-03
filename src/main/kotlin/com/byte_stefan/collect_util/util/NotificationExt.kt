@@ -1,4 +1,4 @@
-package com.byte_stefan.collect_util
+package com.byte_stefan.collect_util.util
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType

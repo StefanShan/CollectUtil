@@ -9,7 +9,6 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiComment
@@ -19,7 +18,6 @@ import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.util.parentOfType
-import org.jetbrains.annotations.NonNls
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.toUElement
@@ -28,7 +26,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 object UtilClassFileManager {
 
+    private const val COMMENT_TAG = "@utilDesc"
+
     private var isScanning: Boolean = false
+    private var mScanListener: ((Boolean) -> Unit)? = null
     private val markUtilClassMap = ConcurrentHashMap<String, List<UtilInfo>>()
     val supportLanguages = arrayListOf("java", "kt")
 
@@ -42,11 +43,16 @@ object UtilClassFileManager {
 
     fun isScanning(): Boolean = isScanning
 
+    fun setScanningListener(scanListener: ((isScanning: Boolean) -> Unit)) {
+        mScanListener = scanListener
+    }
+
     fun scanUtilClass(project: Project) {
         if (isScanning) return
         val task = object : Task.Backgroundable(project, "scanUtilClass") {
             override fun run(indicator: ProgressIndicator) {
                 isScanning = true
+                mScanListener?.invoke(true)
                 ModuleManager.getInstance(project).modules.forEach {
                     ApplicationManager.getApplication().runReadAction {
                         supportLanguages.forEach { suffixStr ->
@@ -62,6 +68,7 @@ object UtilClassFileManager {
             override fun onFinished() {
                 super.onFinished()
                 isScanning = false
+                mScanListener?.invoke(false)
             }
 
         }
@@ -75,7 +82,7 @@ object UtilClassFileManager {
         PsiTreeUtil.collectElements(psiFile) { element ->
             element is PsiComment
         }.filter { psiComment ->
-            psiComment.text.contains("@utilDesc")
+            psiComment.text.contains(COMMENT_TAG)
         }.let {
             if (it.isEmpty()) {
                 markUtilClassMap.remove(psiFile.name)
@@ -83,7 +90,7 @@ object UtilClassFileManager {
             }
             val utilInfoList = mutableListOf<UtilInfo>()
             it.forEach { psiComment ->
-                val descContent = Regex("(@utilDesc)(.*)").find(psiComment.text)?.groupValues?.lastOrNull()
+                val descContent = Regex("($COMMENT_TAG)(.*)").find(psiComment.text)?.groupValues?.lastOrNull()
                 val parentUElement = psiComment.parent.toUElement()
                 if (parentUElement is UClass) {
                     collectClassUtil((parentUElement.javaPsi), descContent, utilInfoList, moduleName, filePath)
@@ -100,8 +107,8 @@ object UtilClassFileManager {
         psiComment: PsiElement,
         descContent: String?,
         utilInfoList: MutableList<UtilInfo>,
-        moduleName: @NlsSafe String?,
-        filePath: @NonNls String
+        moduleName: String?,
+        filePath: String
     ) {
         val methodName = parentUElement.name
         val belong2ClassName = psiComment.parentOfType<PsiClass>()?.name
@@ -123,8 +130,8 @@ object UtilClassFileManager {
         parentUElement: PsiClass,
         descContent: String?,
         utilInfoList: MutableList<UtilInfo>,
-        moduleName: @NlsSafe String?,
-        filePath: @NonNls String
+        moduleName: String?,
+        filePath: String
     ) {
         val className = parentUElement.name
         if (descContent != null) {

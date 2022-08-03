@@ -1,17 +1,23 @@
 package com.byte_stefan.collect_util.ui
 
+import com.byte_stefan.collect_util.Constants
 import com.byte_stefan.collect_util.UtilClassFileManager
 import com.byte_stefan.collect_util.UtilInfo
-import com.byte_stefan.collect_util.showWarning
+import com.byte_stefan.collect_util.util.showWarning
 import com.byte_stefan.collect_util.util.warn
+import com.intellij.ide.SaveAndSyncHandler
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.SelectionAwareListCellRenderer
@@ -28,7 +34,39 @@ class CollectUtilToolWindow : ToolWindowFactory {
     private val listModel = DefaultListModel<UtilInfo>()
     private lateinit var jbList: JBList<UtilInfo>
 
+    override fun init(toolWindow: ToolWindow) {
+        if (toolWindow.id == Constants.TOOL_WINDOW_ID) {
+            UtilClassFileManager.setScanningListener { isScanning ->
+                if (toolWindow.isVisible && !isScanning) {
+                    resetListData()
+                }
+            }
+        }
+    }
+
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+
+        //窗口显示时
+        if (toolWindow.id == Constants.TOOL_WINDOW_ID) {
+            project.messageBus.connect().subscribe(ToolWindowManagerListener.TOPIC, object : ToolWindowManagerListener {
+                override fun toolWindowShown(toolWindow: ToolWindow) {
+                    super.toolWindowShown(toolWindow)
+                    //refreshFile。将内存数据存至文本
+                    if (DumbService.getInstance(project).isDumb.not()) {
+                        ApplicationManager.getApplication().runWriteAction {
+                            FileDocumentManager.getInstance().saveAllDocuments()
+                            SaveAndSyncHandler.getInstance().refreshOpenFiles()
+                            VirtualFileManager.getInstance().refreshWithoutFileWatcher(true)
+                        }
+                        //刷新列表
+                        if (UtilClassFileManager.isScanning().not()) {
+                            resetListData()
+                        }
+                    }
+                }
+            })
+        }
+
         toolWindow.contentManager.addContent(
             ContentFactory.SERVICE.getInstance().createContent(
                 panel {
@@ -41,17 +79,12 @@ class CollectUtilToolWindow : ToolWindowFactory {
                                     showScanningNotification(project)
                                     return@button
                                 }
-                                listModel.clear()
-                                listModel.addAll(UtilClassFileManager.getMarkUtilClassList().filter {
-                                    it.desc?.contains(jbTextField.text.trim(), true) == true
-                                })
-                                jbList.model = listModel
-                                jbList.repaint()
+                                resetListData(jbTextField.text.trim())
                             }
                         }
                     }.right {
                         cell {
-                            button("刷新") {
+                            button("重新扫描") {
                                 UtilClassFileManager.scanUtilClass(project)
                             }
                         }
@@ -132,6 +165,16 @@ class CollectUtilToolWindow : ToolWindowFactory {
                 }, "", false
             )
         )
+    }
+
+    private fun resetListData(inputText: String = "") {
+        listModel.clear()
+        listModel.addAll(UtilClassFileManager.getMarkUtilClassList().filter {
+            it.desc?.contains(inputText, true) == true
+                    || inputText.isEmpty()
+        })
+        jbList.model = listModel
+        jbList.repaint()
     }
 
     private fun showScanningNotification(project: Project) {
