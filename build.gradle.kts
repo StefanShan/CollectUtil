@@ -33,7 +33,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("203.7717")
-        untilBuild.set("222.*")
+        untilBuild.set("221.5921.22")
     }
 
     runIde {
